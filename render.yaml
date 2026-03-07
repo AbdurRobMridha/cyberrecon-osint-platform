@@ -1,0 +1,11 @@
+services:
+  - type: web
+    name: osint-recon-engine-backend
+    env: node
+    buildCommand: npm install
+    startCommand: node server.js
+    envVars:
+      - key: JWT_SECRET
+        generateValue: true
+      - key: PORT
+        value: 3001

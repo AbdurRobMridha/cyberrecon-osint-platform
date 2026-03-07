@@ -1,0 +1,9 @@
+# Netlify config — serves the static frontend files
+[build]
+  publish = "."
+
+# Redirect all requests to index (SPA-style)
+[[redirects]]
+  from   = "/*"
+  to     = "/index.html"
+  status = 200

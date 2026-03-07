@@ -115,7 +115,12 @@
     </div>
 
     <script>
-        const API = 'http://localhost:3001';
+        // ⚙ PRODUCTION: set your Render backend URL here
+        // window.OSINT_API_URL = 'https://your-backend.onrender.com';
+        window.OSINT_API_URL = '';
+    </script>
+    <script>
+        const API = (window.OSINT_API_URL) ? window.OSINT_API_URL : 'http://localhost:3001';
 
         // ── Redirect if already logged in ──────────────────────
         if (localStorage.getItem('osint_token')) {

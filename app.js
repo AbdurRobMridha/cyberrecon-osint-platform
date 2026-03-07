@@ -5,7 +5,11 @@
 
 'use strict';
 
-const API = 'http://localhost:3001';
+// API base — set window.OSINT_API_URL in index.html for production
+const API = (typeof window !== 'undefined' && window.OSINT_API_URL)
+  ? window.OSINT_API_URL
+  : 'http://localhost:3001';
+
 
 // ─── AUTH ─────────────────────────────────────────────────────
 const token = localStorage.getItem('osint_token');

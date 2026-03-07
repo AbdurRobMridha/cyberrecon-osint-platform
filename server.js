@@ -21,7 +21,17 @@ const JWT_SECRET = process.env.JWT_SECRET || 'osint_recon_super_secret_2024_chan
 const USERS_FILE = path.join(__dirname, 'users.json');
 
 // ─── MIDDLEWARE ───────────────────────────────────────────────
-app.use(cors({ origin: '*' }));
+const allowedOrigins = [
+    /^https:\/\/.*\.netlify\.app$/,
+    /^http:\/\/localhost/,
+];
+app.use(cors({
+    origin: (origin, cb) => {
+        if (!origin || allowedOrigins.some(r => r.test(origin))) return cb(null, true);
+        cb(new Error('CORS: origin not allowed'));
+    },
+    credentials: true,
+}));
 app.use(express.json());
 app.use(express.static(__dirname));
 
