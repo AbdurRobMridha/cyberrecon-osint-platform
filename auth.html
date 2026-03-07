@@ -100,6 +100,15 @@
                         <button type="button" class="eye-btn" onclick="togglePw('suPassword', this)">👁</button>
                     </div>
                 </div>
+                <div class="field-group">
+                    <label class="field-label">CONFIRM PASSWORD</label>
+                    <div class="field-wrap">
+                        <span class="field-icon">🔒</span>
+                        <input id="suConfirm" type="password" class="field-input" placeholder="repeat password"
+                            autocomplete="new-password" minlength="6" required />
+                        <button type="button" class="eye-btn" onclick="togglePw('suConfirm', this)">👁</button>
+                    </div>
+                </div>
                 <button type="submit" class="auth-btn" id="btnSignUp">
                     <span class="auth-btn-text">CREATE ACCOUNT</span>
                     <span class="auth-btn-icon">→</span>
@@ -186,14 +195,24 @@
             }
         }
 
-        // ── Sign Up ───────────────────────────────────────────
+        // ── Sign Up ──────────────────────────────────────────────────
         async function handleSignUp(e) {
             e.preventDefault();
             hideAlert();
-            setLoading('btnSignUp', null, true, 'CREATE ACCOUNT');
+
             const username = document.getElementById('suUsername').value.trim();
             const email = document.getElementById('suEmail').value.trim();
             const password = document.getElementById('suPassword').value;
+            const confirm = document.getElementById('suConfirm').value;
+
+            // Client-side password match check
+            if (password !== confirm) {
+                showAlert('Passwords do not match. Please try again.');
+                document.getElementById('suConfirm').focus();
+                return;
+            }
+
+            setLoading('btnSignUp', null, true, 'CREATE ACCOUNT');
             try {
                 const res = await fetch(`${API}/api/auth/register`, {
                     method: 'POST', headers: { 'Content-Type': 'application/json' },
@@ -201,10 +220,11 @@
                 });
                 const data = await res.json();
                 if (!res.ok) throw new Error(data.error || 'Registration failed');
-                localStorage.setItem('osint_token', data.token);
-                localStorage.setItem('osint_user', JSON.stringify(data.user));
-                showAlert('Account created. Access granted!', 'success');
-                setTimeout(() => window.location.href = 'index.html', 800);
+
+                // Reset form, switch to Sign In, show success — do NOT auto-redirect
+                document.getElementById('formSignUp').reset();
+                switchTab('signin');
+                showAlert(`Account "${username}" created! Please sign in below.`, 'success');
             } catch (err) {
                 showAlert(err.message);
             } finally {
