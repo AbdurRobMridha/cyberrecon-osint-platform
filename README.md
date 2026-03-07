@@ -36,7 +36,7 @@
 npm install
 
 # 2. Create .env
-echo "JWT_SECRET=yourSecretHere" > .env
+echo "JWT_SECRET= set your secret key" > .env
 
 # 3. Start server
 node server.js
