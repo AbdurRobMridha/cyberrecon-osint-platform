@@ -23,6 +23,8 @@ const USERS_FILE = path.join(__dirname, 'users.json');
 // ─── MIDDLEWARE ───────────────────────────────────────────────
 const allowedOrigins = [
     /^https:\/\/.*\.netlify\.app$/,
+    /^https:\/\/.*\.railway\.app$/,
+    /^https:\/\/.*\.up\.railway\.app$/,
     /^http:\/\/localhost/,
 ];
 app.use(cors({
