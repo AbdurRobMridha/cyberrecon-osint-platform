@@ -1,0 +1,16 @@
+[
+  {
+    "id": "1772865415472",
+    "username": "testoperator",
+    "email": "test@osint.com",
+    "password": "$2a$12$yiaPLxnzpfKfAqhS5Xe97.OAeeRV.7/3nuRqY4PkIqVuzoL2IJyNq",
+    "createdAt": "2026-03-07T06:36:55.472Z"
+  },
+  {
+    "id": "1772865968186",
+    "username": "abdurrobrob5411@gmail.com",
+    "email": "abdurrobrob5411@gmail.com",
+    "password": "$2a$12$SuzHDNhSLy8cxl/ciMctKudJ9JxM0tbRZPy7nw9Qs2PvIzMDGDcou",
+    "createdAt": "2026-03-07T06:46:08.188Z"
+  }
+]

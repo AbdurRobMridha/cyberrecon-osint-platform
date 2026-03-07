@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>OSINT Recon Engine — Username Intelligence</title>
+    <meta name="description"
+        content="Username OSINT Reconnaissance Engine — scan 50+ platforms for username existence across the internet." />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link
+        href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;600;700&family=Orbitron:wght@400;700;900&family=Inter:wght@300;400;500;600&display=swap"
+        rel="stylesheet" />
+    <link rel="stylesheet" href="style.css" />
+    <script>
+        // Auth guard — redirect to login if no token
+        (function () {
+            const token = localStorage.getItem('osint_token');
+            if (!token) window.location.replace('auth.html');
+        })();
+    </script>
+</head>
+
+<body>
+
+    <!-- Animated background particles -->
+    <canvas id="bgCanvas"></canvas>
+
+    <!-- Header -->
+    <header class="header">
+        <div class="header-inner">
+            <div class="logo">
+                <div class="logo-icon">
+                    <svg viewBox="0 0 40 40" fill="none">
+                        <circle cx="20" cy="20" r="18" stroke="#00f5ff" stroke-width="1.5" />
+                        <circle cx="20" cy="20" r="10" stroke="#00f5ff" stroke-width="1" stroke-dasharray="4 2" />
+                        <circle cx="20" cy="20" r="3" fill="#00f5ff" />
+                        <line x1="20" y1="2" x2="20" y2="8" stroke="#00f5ff" stroke-width="1.5" />
+                        <line x1="20" y1="32" x2="20" y2="38" stroke="#00f5ff" stroke-width="1.5" />
+                        <line x1="2" y1="20" x2="8" y2="20" stroke="#00f5ff" stroke-width="1.5" />
+                        <line x1="32" y1="20" x2="38" y2="20" stroke="#00f5ff" stroke-width="1.5" />
+                    </svg>
+                </div>
+                <div>
+                    <div class="logo-title">OSINT RECON ENGINE</div>
+                    <div class="logo-sub">Username Intelligence System v2.0</div>
+                </div>
+            </div>
+            <div class="header-stats">
+                <div class="stat-chip"><span class="stat-val" id="hdrTotal">0</span><span
+                        class="stat-lbl">PLATFORMS</span></div>
+                <div class="stat-chip found"><span class="stat-val" id="hdrFound">0</span><span
+                        class="stat-lbl">FOUND</span></div>
+                <div class="stat-chip blocked"><span class="stat-val" id="hdrBlocked">0</span><span
+                        class="stat-lbl">BLOCKED</span></div>
+                <div class="user-badge" id="userBadge">
+                    <span class="user-badge-icon">◉</span>
+                    <span class="user-badge-name" id="userBadgeName">OPERATOR</span>
+                    <button class="logout-btn" id="logoutBtn" title="Sign out">⏏ LOGOUT</button>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main layout -->
+    <main class="main-layout">
+
+        <!-- Left panel: search + results -->
+        <section class="left-panel">
+
+            <!-- Search card -->
+            <div class="search-card glass">
+                <div class="search-label">TARGET USERNAME</div>
+                <div class="search-row">
+                    <div class="search-box-wrap">
+                        <span class="search-at">@</span>
+                        <input id="usernameInput" class="search-input" type="text"
+                            placeholder="enter username to investigate..." autocomplete="off" spellcheck="false" />
+                        <div class="input-cursor"></div>
+                    </div>
+                    <button id="scanBtn" class="scan-btn">
+                        <span class="scan-btn-icon">▶</span>
+                        <span id="scanBtnText">SCAN</span>
+                    </button>
+                </div>
+                <div class="search-meta">
+                    <span id="statusLine" class="status-idle">● SYSTEM READY — AWAITING TARGET</span>
+                    <span id="timerDisplay" class="timer"></span>
+                </div>
+                <!-- Progress bar -->
+                <div class="progress-wrap" id="progressWrap" style="display:none">
+                    <div class="progress-bar">
+                        <div class="progress-fill" id="progressFill"></div>
+                    </div>
+                    <span class="progress-text" id="progressText">0 / 0</span>
+                </div>
+            </div>
+
+            <!-- Category filter tabs -->
+            <div class="filter-tabs" id="filterTabs" style="display:none">
+                <button class="tab active" data-cat="all">ALL</button>
+                <button class="tab" data-cat="Developer">DEV</button>
+                <button class="tab" data-cat="Social">SOCIAL</button>
+                <button class="tab" data-cat="Professional">PROF</button>
+                <button class="tab" data-cat="Content">CONTENT</button>
+                <button class="tab" data-cat="Gaming">GAMING</button>
+                <button class="tab" data-cat="Design">DESIGN</button>
+                <button class="tab" data-cat="Forum">FORUM</button>
+                <button class="tab" data-cat="Blog">BLOG</button>
+                <button class="tab" data-cat="OSINT">OSINT</button>
+            </div>
+
+            <!-- Results summary bar -->
+            <div class="results-summary" id="resultsSummary" style="display:none">
+                <div class="sum-chip found">
+                    <div class="dot-green"></div><span id="sumFound">0</span> FOUND
+                </div>
+                <div class="sum-chip notfound">
+                    <div class="dot-red"></div><span id="sumNotFound">0</span> NOT FOUND
+                </div>
+                <div class="sum-chip blocked">
+                    <div class="dot-orange"></div><span id="sumBlocked">0</span> BLOCKED
+                </div>
+                <div class="sum-chip">
+                    <div class="dot-grey"></div><span id="sumScanning">0</span> SCANNING
+                </div>
+            </div>
+
+            <!-- Results grid -->
+            <div class="results-grid" id="resultsGrid">
+                <!-- Placeholder cards -->
+                <div class="empty-state">
+                    <div class="empty-icon">◎</div>
+                    <div class="empty-title">NO ACTIVE INVESTIGATION</div>
+                    <div class="empty-sub">Enter a username above and press SCAN to begin reconnaissance</div>
+                </div>
+            </div>
+
+        </section>
+
+        <!-- Right panel: 3D graph -->
+        <section class="right-panel">
+            <div class="graph-header glass">
+                <span class="graph-title">CYBER INTELLIGENCE GRAPH</span>
+                <span class="graph-sub" id="graphSub">NODES APPEAR ON DETECTION</span>
+            </div>
+            <div class="graph-container" id="graphContainer">
+                <canvas id="graphCanvas"></canvas>
+                <div class="graph-overlay">
+                    <div class="crosshair"></div>
+                </div>
+                <div class="graph-legend">
+                    <div class="legend-item"><span class="legend-dot green"></span>FOUND</div>
+                    <div class="legend-item"><span class="legend-dot orange"></span>BLOCKED</div>
+                    <div class="legend-item"><span class="legend-dot blue"></span>TARGET</div>
+                </div>
+                <div class="rotate-hint">⟳ DRAG TO ROTATE</div>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <span>OSINT RECON ENGINE</span>
+        <span class="footer-sep">|</span>
+        <span>FOR EDUCATIONAL &amp; ETHICAL RESEARCH ONLY</span>
+        <span class="footer-sep">|</span>
+        <span id="footerTime"></span>
+    </footer>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="app.js"></script>
+</body>
+
+</html>

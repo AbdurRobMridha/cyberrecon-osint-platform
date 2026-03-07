@@ -1,0 +1,247 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>OSINT Recon Engine — Authentication</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link
+        href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;600;700&family=Orbitron:wght@400;700;900&family=Inter:wght@300;400;500;600&display=swap"
+        rel="stylesheet" />
+    <link rel="stylesheet" href="auth.css" />
+</head>
+
+<body>
+    <canvas id="bgCanvas"></canvas>
+
+    <div class="auth-wrap">
+        <!-- Logo -->
+        <div class="auth-logo">
+            <div class="logo-icon-wrap">
+                <svg viewBox="0 0 60 60" fill="none">
+                    <circle cx="30" cy="30" r="28" stroke="#00f5ff" stroke-width="1.5" />
+                    <circle cx="30" cy="30" r="16" stroke="#00f5ff" stroke-width="1" stroke-dasharray="5 3" />
+                    <circle cx="30" cy="30" r="4" fill="#00f5ff" />
+                    <line x1="30" y1="2" x2="30" y2="12" stroke="#00f5ff" stroke-width="1.5" />
+                    <line x1="30" y1="48" x2="30" y2="58" stroke="#00f5ff" stroke-width="1.5" />
+                    <line x1="2" y1="30" x2="12" y2="30" stroke="#00f5ff" stroke-width="1.5" />
+                    <line x1="48" y1="30" x2="58" y2="30" stroke="#00f5ff" stroke-width="1.5" />
+                    <line x1="10" y1="10" x2="17" y2="17" stroke="#00f5ff" stroke-width="1" opacity=".5" />
+                    <line x1="50" y1="10" x2="43" y2="17" stroke="#00f5ff" stroke-width="1" opacity=".5" />
+                    <line x1="10" y1="50" x2="17" y2="43" stroke="#00f5ff" stroke-width="1" opacity=".5" />
+                    <line x1="50" y1="50" x2="43" y2="43" stroke="#00f5ff" stroke-width="1" opacity=".5" />
+                </svg>
+            </div>
+            <div class="auth-logo-text">OSINT RECON ENGINE</div>
+            <div class="auth-logo-sub">USERNAME INTELLIGENCE SYSTEM</div>
+        </div>
+
+        <!-- Card -->
+        <div class="auth-card glass">
+            <!-- Tabs -->
+            <div class="auth-tabs">
+                <button class="auth-tab active" id="tabSignIn" onclick="switchTab('signin')">SIGN IN</button>
+                <button class="auth-tab" id="tabSignUp" onclick="switchTab('signup')">SIGN UP</button>
+            </div>
+
+            <!-- Error / Success banner -->
+            <div class="auth-alert" id="authAlert" style="display:none"></div>
+
+            <!-- SIGN IN FORM -->
+            <form id="formSignIn" onsubmit="handleSignIn(event)">
+                <div class="field-group">
+                    <label class="field-label">EMAIL ADDRESS</label>
+                    <div class="field-wrap">
+                        <span class="field-icon">✉</span>
+                        <input id="siEmail" type="email" class="field-input" placeholder="operator@domain.com"
+                            autocomplete="email" required />
+                    </div>
+                </div>
+                <div class="field-group">
+                    <label class="field-label">PASSWORD</label>
+                    <div class="field-wrap">
+                        <span class="field-icon">🔒</span>
+                        <input id="siPassword" type="password" class="field-input" placeholder="••••••••"
+                            autocomplete="current-password" required />
+                        <button type="button" class="eye-btn" onclick="togglePw('siPassword', this)">👁</button>
+                    </div>
+                </div>
+                <button type="submit" class="auth-btn" id="btnSignIn">
+                    <span class="auth-btn-text">AUTHENTICATE</span>
+                    <span class="auth-btn-icon">→</span>
+                </button>
+            </form>
+
+            <!-- SIGN UP FORM -->
+            <form id="formSignUp" onsubmit="handleSignUp(event)" style="display:none">
+                <div class="field-group">
+                    <label class="field-label">OPERATOR HANDLE</label>
+                    <div class="field-wrap">
+                        <span class="field-icon">@</span>
+                        <input id="suUsername" type="text" class="field-input" placeholder="yourhandle"
+                            autocomplete="username" minlength="3" maxlength="30" required />
+                    </div>
+                </div>
+                <div class="field-group">
+                    <label class="field-label">EMAIL ADDRESS</label>
+                    <div class="field-wrap">
+                        <span class="field-icon">✉</span>
+                        <input id="suEmail" type="email" class="field-input" placeholder="operator@domain.com"
+                            autocomplete="email" required />
+                    </div>
+                </div>
+                <div class="field-group">
+                    <label class="field-label">PASSWORD</label>
+                    <div class="field-wrap">
+                        <span class="field-icon">🔒</span>
+                        <input id="suPassword" type="password" class="field-input" placeholder="min 6 characters"
+                            autocomplete="new-password" minlength="6" required />
+                        <button type="button" class="eye-btn" onclick="togglePw('suPassword', this)">👁</button>
+                    </div>
+                </div>
+                <button type="submit" class="auth-btn" id="btnSignUp">
+                    <span class="auth-btn-text">CREATE ACCOUNT</span>
+                    <span class="auth-btn-icon">→</span>
+                </button>
+            </form>
+
+            <div class="auth-footer-note">
+                By signing in you agree to use this tool <strong>ethically</strong> and for lawful purposes only.
+            </div>
+        </div>
+
+        <div class="scan-line"></div>
+    </div>
+
+    <script>
+        const API = 'http://localhost:3001';
+
+        // ── Redirect if already logged in ──────────────────────
+        if (localStorage.getItem('osint_token')) {
+            window.location.href = 'index.html';
+        }
+
+        // ── Tab switch ────────────────────────────────────────
+        function switchTab(tab) {
+            document.getElementById('formSignIn').style.display = tab === 'signin' ? '' : 'none';
+            document.getElementById('formSignUp').style.display = tab === 'signup' ? '' : 'none';
+            document.getElementById('tabSignIn').classList.toggle('active', tab === 'signin');
+            document.getElementById('tabSignUp').classList.toggle('active', tab === 'signup');
+            hideAlert();
+        }
+
+        // ── Alert helpers ─────────────────────────────────────
+        function showAlert(msg, type = 'error') {
+            const el = document.getElementById('authAlert');
+            el.textContent = (type === 'error' ? '⚠ ' : '✓ ') + msg;
+            el.className = 'auth-alert ' + type;
+            el.style.display = 'block';
+        }
+        function hideAlert() {
+            document.getElementById('authAlert').style.display = 'none';
+        }
+
+        // ── Password eye toggle ───────────────────────────────
+        function togglePw(id, btn) {
+            const el = document.getElementById(id);
+            el.type = el.type === 'password' ? 'text' : 'password';
+            btn.textContent = el.type === 'password' ? '👁' : '🙈';
+        }
+
+        // ── Loading state ─────────────────────────────────────
+        function setLoading(btnId, textId, loading, defaultText) {
+            const btn = document.getElementById(btnId);
+            btn.disabled = loading;
+            btn.querySelector('.auth-btn-text').textContent = loading ? 'PROCESSING...' : defaultText;
+        }
+
+        // ── Sign In ───────────────────────────────────────────
+        async function handleSignIn(e) {
+            e.preventDefault();
+            hideAlert();
+            setLoading('btnSignIn', null, true, 'AUTHENTICATE');
+            const email = document.getElementById('siEmail').value.trim();
+            const password = document.getElementById('siPassword').value;
+            try {
+                const res = await fetch(`${API}/api/auth/login`, {
+                    method: 'POST', headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ email, password })
+                });
+                const data = await res.json();
+                if (!res.ok) throw new Error(data.error || 'Login failed');
+                localStorage.setItem('osint_token', data.token);
+                localStorage.setItem('osint_user', JSON.stringify(data.user));
+                showAlert('Access granted. Redirecting...', 'success');
+                setTimeout(() => window.location.href = 'index.html', 800);
+            } catch (err) {
+                showAlert(err.message);
+            } finally {
+                setLoading('btnSignIn', null, false, 'AUTHENTICATE');
+            }
+        }
+
+        // ── Sign Up ───────────────────────────────────────────
+        async function handleSignUp(e) {
+            e.preventDefault();
+            hideAlert();
+            setLoading('btnSignUp', null, true, 'CREATE ACCOUNT');
+            const username = document.getElementById('suUsername').value.trim();
+            const email = document.getElementById('suEmail').value.trim();
+            const password = document.getElementById('suPassword').value;
+            try {
+                const res = await fetch(`${API}/api/auth/register`, {
+                    method: 'POST', headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ username, email, password })
+                });
+                const data = await res.json();
+                if (!res.ok) throw new Error(data.error || 'Registration failed');
+                localStorage.setItem('osint_token', data.token);
+                localStorage.setItem('osint_user', JSON.stringify(data.user));
+                showAlert('Account created. Access granted!', 'success');
+                setTimeout(() => window.location.href = 'index.html', 800);
+            } catch (err) {
+                showAlert(err.message);
+            } finally {
+                setLoading('btnSignUp', null, false, 'CREATE ACCOUNT');
+            }
+        }
+
+        // ── Background particles ─────────────────────────────
+        (function () {
+            const canvas = document.getElementById('bgCanvas');
+            const ctx = canvas.getContext('2d');
+            let W, H, pts = [];
+            function resize() { W = canvas.width = innerWidth; H = canvas.height = innerHeight; }
+            resize(); window.addEventListener('resize', resize);
+            const PAL = ['#00f5ff', '#00ff88', '#b44bff', '#4b8fff'];
+            for (let i = 0; i < 70; i++) pts.push({
+                x: Math.random() * 1600, y: Math.random() * 900,
+                vx: (Math.random() - .5) * .4, vy: (Math.random() - .5) * .4,
+                r: Math.random() * 1.2 + .3, color: PAL[Math.floor(Math.random() * 4)], alpha: Math.random() * .4 + .1
+            });
+            function draw() {
+                ctx.clearRect(0, 0, W, H);
+                pts.forEach(p => {
+                    p.x += p.vx; p.y += p.vy;
+                    if (p.x < 0) p.x = W; if (p.x > W) p.x = 0;
+                    if (p.y < 0) p.y = H; if (p.y > H) p.y = 0;
+                    ctx.beginPath(); ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
+                    ctx.fillStyle = p.color; ctx.globalAlpha = p.alpha; ctx.fill();
+                });
+                ctx.globalAlpha = 1;
+                for (let i = 0; i < pts.length; i++) for (let j = i + 1; j < pts.length; j++) {
+                    const dx = pts[i].x - pts[j].x, dy = pts[i].y - pts[j].y, d = Math.sqrt(dx * dx + dy * dy);
+                    if (d < 120) {
+                        ctx.beginPath(); ctx.strokeStyle = `rgba(0,245,255,${(1 - d / 120) * .07})`; ctx.lineWidth = .4;
+                        ctx.moveTo(pts[i].x, pts[i].y); ctx.lineTo(pts[j].x, pts[j].y); ctx.stroke();
+                    }
+                }
+                requestAnimationFrame(draw);
+            }
+            draw();
+        })();
+    </script>
+</body>
+
+</html>
