@@ -243,67 +243,117 @@ function renderResults() {
   }
   resultsGrid.innerHTML = '';
   list.forEach(r => {
-    const card = document.createElement('div');
     const stRaw = (r.status || 'scanning');
     const stCls = stRaw.toLowerCase().replace('_', '-').replace('not-found', 'notfound');
+    const timeStr = r.ms != null ? r.ms + 'ms' : '...';
+
+    // ── card shell ──────────────────────────────────────────
+    const card = document.createElement('div');
     card.className = 'result-card ' + stCls;
 
-    const timeStr = r.ms != null ? r.ms + 'ms' : '...';
-    const httpChip = r.httpStatus
-      ? `<span style="font-family:var(--font-mono);font-size:9px;color:var(--text2);padding:2px 6px;border-radius:4px;background:rgba(0,0,0,.3)">HTTP ${r.httpStatus}</span>`
-      : '';
+    // shimmer
+    if (stRaw === 'SCANNING') {
+      const shimmer = document.createElement('div');
+      shimmer.className = 'scan-shimmer';
+      card.appendChild(shimmer);
+    }
 
-    // Always show a link button — style changes per status
-    const visitBtn = r.url && r.url !== '' && stRaw !== 'SCANNING'
-      ? buildVisitBtn(r.url, stRaw)
-      : `<span style="font-family:var(--font-mono);font-size:10px;color:var(--text2)">${timeStr}</span>`;
-
-    const statusLabel = stRaw.replace('_', ' ');
-
-    card.innerHTML = `
-      ${stRaw === 'SCANNING' ? '<div class="scan-shimmer"></div>' : ''}
-      <div class="card-top">
-        <div class="card-icon">${r.emoji}</div>
-        <div class="card-meta">
-          <div class="card-platform">${r.name}</div>
-          <div class="card-category">${r.cat.toUpperCase()}</div>
-        </div>
-        <div class="card-status ${stCls}">
-          <span class="status-dot ${stCls}"></span>
-          ${stRaw === 'SCANNING' ? 'SCANNING' : statusLabel}
-        </div>
+    // top row
+    const top = document.createElement('div');
+    top.className = 'card-top';
+    top.innerHTML = `
+      <div class="card-icon">${r.emoji}</div>
+      <div class="card-meta">
+        <div class="card-platform">${r.name}</div>
+        <div class="card-category">${r.cat ? r.cat.toUpperCase() : ''}</div>
       </div>
-      <div class="card-url">
-        ${r.url ? `<a href="${r.url}" target="_blank" rel="noopener noreferrer">${r.url}</a>` : ''}
-      </div>
-      <div class="card-bottom" style="display:flex;align-items:center;justify-content:space-between;gap:8px">
-        <span style="font-family:var(--font-mono);font-size:10px;color:var(--text2)">${timeStr}</span>
-        ${visitBtn}
+      <div class="card-status ${stCls}">
+        <span class="status-dot ${stCls}"></span>
+        ${stRaw === 'SCANNING' ? 'SCANNING' : stRaw.replace('_', ' ')}
       </div>`;
+    card.appendChild(top);
+
+    // clickable URL line — real <a> created via createElement
+    const urlRow = document.createElement('div');
+    urlRow.className = 'card-url';
+    if (r.url) {
+      const urlLink = document.createElement('a');
+      urlLink.href = r.url;
+      urlLink.target = '_blank';
+      urlLink.rel = 'noopener noreferrer';
+      urlLink.textContent = r.url;
+      urlRow.appendChild(urlLink);
+    }
+    card.appendChild(urlRow);
+
+    // bottom row: time + visit button
+    const bottom = document.createElement('div');
+    bottom.style.cssText = 'display:flex;align-items:center;justify-content:space-between;gap:8px';
+
+    const timeSpan = document.createElement('span');
+    timeSpan.style.cssText = 'font-family:var(--font-mono);font-size:10px;color:var(--text2)';
+    timeSpan.textContent = timeStr;
+    bottom.appendChild(timeSpan);
+
+    // visit button — real <a> created via createElement, NEVER blocked
+    if (r.url && r.url !== '' && stRaw !== 'SCANNING') {
+      const btn = makeVisitLink(r.url, stRaw);
+      bottom.appendChild(btn);
+    }
+    card.appendChild(bottom);
+
     resultsGrid.appendChild(card);
   });
 }
 
-// Returns a styled visit/check/verify button per status
-// Uses onclick+window.open for guaranteed new-tab navigation
-function buildVisitBtn(url, status) {
-  const safeUrl = url.replace(/"/g, '&quot;');
-  const open = `onclick="window.open('${safeUrl}','_blank','noopener,noreferrer')"`;
+// Creates a real <a> DOM element — browser always opens these,
+// unlike innerHTML-injected anchors which can be popup-blocked
+function makeVisitLink(url, status) {
+  const a = document.createElement('a');
+  a.href = url;
+  a.target = '_blank';
+  a.rel = 'noopener noreferrer';
+  a.className = 'card-link-btn';
 
   if (status === 'FOUND') {
-    return `<button class="card-link-btn" ${open} title="Open profile in new tab">↗ VISIT</button>`;
+    a.textContent = '↗ VISIT';
+  } else if (status === 'UNCERTAIN') {
+    a.textContent = '↗ VERIFY';
+    a.style.cssText = 'border-color:rgba(255,214,0,0.5);color:#ffd600;background:rgba(255,214,0,0.08)';
+  } else if (status === 'BLOCKED') {
+    a.textContent = '↗ CHECK';
+    a.style.cssText = 'border-color:rgba(255,149,0,0.4);color:var(--orange);background:rgba(255,149,0,0.08)';
+  } else {
+    a.textContent = '↗ CHECK';
+    a.style.cssText = 'border-color:rgba(255,59,92,0.3);color:var(--text2);background:rgba(255,59,92,0.05)';
+  }
+  return a;
+}
+
+
+// Builds visit button — uses data-url (opened by event delegation below, never blocked)
+function buildVisitBtn(url, status) {
+  if (!url) return '';
+  const esc = url.replace(/"/g, '&quot;');
+
+  if (status === 'FOUND') {
+    return `<a class="card-link-btn" data-url="${esc}" href="${esc}" target="_blank"
+      rel="noopener noreferrer" title="Open profile in new tab">↗ VISIT</a>`;
   }
   if (status === 'UNCERTAIN') {
-    return `<button class="card-link-btn" ${open} title="Result uncertain — verify manually"
-      style="border-color:rgba(255,214,0,0.5);color:#ffd600;background:rgba(255,214,0,0.08);cursor:pointer">↗ VERIFY</button>`;
+    return `<a class="card-link-btn" data-url="${esc}" href="${esc}" target="_blank"
+      rel="noopener noreferrer" title="Result uncertain — verify manually"
+      style="border-color:rgba(255,214,0,0.5);color:#ffd600;background:rgba(255,214,0,0.08)">↗ VERIFY</a>`;
   }
   if (status === 'BLOCKED') {
-    return `<button class="card-link-btn" ${open} title="Platform blocked scan — check manually"
-      style="border-color:rgba(255,149,0,0.4);color:var(--orange);background:rgba(255,149,0,0.08);cursor:pointer">↗ CHECK</button>`;
+    return `<a class="card-link-btn" data-url="${esc}" href="${esc}" target="_blank"
+      rel="noopener noreferrer" title="Platform blocked scan — check manually"
+      style="border-color:rgba(255,149,0,0.4);color:var(--orange);background:rgba(255,149,0,0.08)">↗ CHECK</a>`;
   }
   if (status === 'NOT_FOUND') {
-    return `<button class="card-link-btn" ${open} title="Not found — check manually to confirm"
-      style="border-color:rgba(255,59,92,0.3);color:var(--text2);background:rgba(255,59,92,0.05);cursor:pointer">↗ CHECK</button>`;
+    return `<a class="card-link-btn" data-url="${esc}" href="${esc}" target="_blank"
+      rel="noopener noreferrer" title="Not found — verify manually"
+      style="border-color:rgba(255,59,92,0.3);color:var(--text2);background:rgba(255,59,92,0.05)">↗ CHECK</a>`;
   }
   return '';
 }
@@ -475,4 +525,16 @@ document.querySelectorAll('.tab').forEach(tab => {
     activeFilter = tab.dataset.cat;
     renderResults();
   });
+});
+
+// ─── VISIT BUTTON — EVENT DELEGATION ─────────────────────────
+// Handles all .card-link-btn clicks as genuine user events
+// (inline onclick on innerHTML elements can be popup-blocked)
+resultsGrid.addEventListener('click', e => {
+  const btn = e.target.closest('[data-url]');
+  if (!btn) return;
+  e.preventDefault();          // stop default anchor
+  e.stopPropagation();
+  const url = btn.dataset.url;
+  if (url) window.open(url, '_blank', 'noopener,noreferrer');
 });

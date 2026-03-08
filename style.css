@@ -530,6 +530,8 @@ body {
     inset: 0;
     opacity: 0;
     transition: opacity .25s;
+    pointer-events: none;
+    /* CRITICAL: don't intercept clicks on buttons */
 }
 
 .result-card:hover {
