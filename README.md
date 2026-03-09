@@ -1,123 +1,74 @@
-# 🔍 OSINT Recon Engine
+# OSINT Recon Engine — Username Intelligence System
 
-> **Username Intelligence System** — Scan 50+ platforms in real-time to discover where a username exists across the internet.
+#### Video Demo: https://youtu.be/mvBZcFMDspU
 
-[![Live Demo](https://img.shields.io/badge/Live-Demo-00f5ff?style=for-the-badge)](https://osint-recon-engine-backend-production.up.railway.app)
-[![Node.js](https://img.shields.io/badge/Node.js-18+-339933?style=for-the-badge&logo=nodedotjs)](https://nodejs.org)
-[![Express](https://img.shields.io/badge/Express-4.x-000000?style=for-the-badge&logo=express)](https://expressjs.com)
+#### Description:
 
----
-
-## ✨ Features
-
-- 🔎 **Real HTTP scanning** — actual requests to each platform, not simulations
-- ⚡ **Live results via SSE** — cards stream in as each platform is checked
-- 🔐 **JWT Authentication** — sign up / sign in before scanning
-- 📊 **Smart detection** — 3-layer analysis: HTTP codes + body content + positive confirmation
-- 🌐 **50+ platforms** — Developer, Social, Professional, Content, Gaming, Design, Forum, Blog
-- 🧠 **3D Intelligence Graph** — Three.js visualization of detected accounts
-- 🟡 **UNCERTAIN status** — flags ambiguous results for manual verification
-- 🟢🟠🔴 **Color-coded buttons** — VISIT / VERIFY / CHECK per result confidence
+**OSINT Recon Engine** is a full-stack web application that performs real-time Open Source Intelligence (OSINT) reconnaissance on a given username across 50+ platforms simultaneously. Built as my CS50 final project, it combines a Node.js backend with a cyberpunk-styled frontend to deliver a professional-grade username investigation tool.
 
 ---
 
-## 🖥️ Screenshots
+## What It Does
 
-| Auth Page | Dashboard |
-|---|---|
-| Cyberpunk sign-in/sign-up | Real-time scan results with 3D graph |
+You enter a username, hit **SCAN**, and the engine fires off parallel HTTP requests to dozens of platforms — from GitHub and Twitter to gaming networks, forums, design communities, and developer hubs. Each result streams back in real-time via **Server-Sent Events (SSE)**, so you watch results populate live rather than waiting for a full batch to complete.
 
----
-
-## 🚀 Quick Start (Local)
-
-```bash
-# 1. Install dependencies
-npm install
-
-# 2. Create .env
-echo "JWT_SECRET= set your secret key" > .env
-
-# 3. Start server
-node server.js
-
-# 4. Open browser
-# http://localhost:3001/auth.html
-```
+Results are classified into four statuses:
+- � **FOUND** — the username exists and is publicly accessible
+- 🔴 **NOT FOUND** — no profile detected at that URL
+- 🟠 **BLOCKED** — the platform rate-limited or blocked the scan
+- 🟡 **UNCERTAIN** — ambiguous response requiring manual verification
 
 ---
 
-## 📡 Platform Categories
+## Key Features
 
-| Category | Platforms |
-|---|---|
-| 👨‍💻 Developer | GitHub, GitLab, Bitbucket, StackOverflow, Dev.to, CodePen, Replit, HackerRank, LeetCode, Kaggle + more |
-| 📱 Social | Reddit, TikTok, Pinterest, Threads, Instagram, X, Facebook, Snapchat |
-| 💼 Professional | LinkedIn, AngelList, ResearchGate, ORCID |
-| 🎬 Content | YouTube, Twitch, Medium, Substack, SoundCloud, Spotify |
-| 🎮 Gaming | Steam, Epic Games, PSN Profiles |
-| 🎨 Design | Dribbble, Behance, ArtStation |
-| 💬 Forum | Quora, ProductHunt, Hashnode, Disqus |
-| 📝 Blog | WordPress, Blogger, Ghost |
-| 🔍 OSINT | Gravatar, About.me, Keybase, BuyMeACoffee, Patreon |
+- **Real-time streaming** — SSE delivers each result the moment it's ready, with a live progress bar and elapsed timer
+- **3D Cyber Intelligence Graph** — built with Three.js, nodes appear on the globe as profiles are discovered; drag to rotate it interactively
+- **Category filter tabs** — filter results by Developer, Social, Gaming, Professional, Content, Design, Forum, Blog, or OSINT platforms
+- **JWT Authentication** — sign up / sign in guards the scanner; your token is stored in `localStorage` and verified server-side before any scan begins
+- **Animated background** — 90-particle canvas system with connecting lines, creating the cyberpunk aesthetic
+- **Glassmorphism UI** — dark theme using custom CSS variables with blur, glow effects, and micro-animations throughout
 
 ---
 
-## 🏗️ Architecture
-
-```
-Browser (Netlify / Railway static)
-    │
-    ├── auth.html  →  POST /api/auth/register  ┐
-    │                 POST /api/auth/login      ├── Express + bcrypt + JWT
-    │                                           │
-    └── index.html →  GET  /api/scan/:username ─┤  SSE stream
-                      (EventSource / SSE)        └── axios → real HTTP checks
-```
-
-### Detection Logic
-
-```
-HTTP 404           → NOT FOUND  ✅ reliable
-HTTP 403/429/503   → BLOCKED    (server IP blocked by platform)
-HTTP 200 + body notFoundStrings → NOT FOUND  ✅ catches false positives
-HTTP 200 + foundStrings match  → FOUND       ✅ positively confirmed
-HTTP 200 + no match            → UNCERTAIN ⚠️ (manual verify button shown)
-```
-
----
-
-## 🔧 Tech Stack
+## Tech Stack
 
 | Layer | Technology |
 |---|---|
-| Backend | Node.js, Express.js |
-| Auth | JWT (`jsonwebtoken`), bcrypt (`bcryptjs`) |
-| Scanning | Axios with browser-like headers |
+| Frontend | HTML5, Vanilla CSS, Vanilla JavaScript |
+| 3D Visualization | Three.js (r128) |
+| Backend | Node.js with Express |
+| Auth | JSON Web Tokens (JWT) |
 | Streaming | Server-Sent Events (SSE) |
-| Frontend | Vanilla HTML/CSS/JS |
-| 3D Graph | Three.js |
-| Storage | Flat-file `users.json` |
+| Fonts | JetBrains Mono, Orbitron, Inter (Google Fonts) |
+| Deployment | Railway (backend) + Netlify (frontend) |
 
 ---
 
-## 🌍 Deployment (Railway)
+## Design Decisions
 
-1. Push to GitHub
-2. [railway.app](https://railway.app) → New Project → Import repo
-3. Set env vars: `JWT_SECRET=yourSecret` · `PORT=3001`
-4. Generate domain → your app is live
+**Why SSE over WebSockets?** SSE is one-directional (server → client) which perfectly matches the scan flow — the frontend only needs to receive updates, not send them mid-scan. SSE is simpler to implement and works natively in the browser without a library.
 
----
+**Why Vanilla JS (no framework)?** The project prioritizes understanding the DOM and browser APIs at a fundamental level, which aligns with CS50's philosophy. All state management, rendering, and event delegation are hand-rolled.
 
-## ⚠️ Disclaimer
+**Why Three.js for the graph?** A static result list felt insufficient for a "recon engine." A live 3D node graph where each discovered profile spawns a new sphere makes the data feel visceral and gives the tool a distinct visual identity.
 
-This tool is for **educational and ethical OSINT purposes only**.  
-Always respect platforms' Terms of Service. Do not use to harass, stalk, or harm individuals.  
-The author is not responsible for misuse.
+**Ethical stance:** The tool only checks publicly accessible URLs and respects HTTP response codes. It is designed for educational and legitimate OSINT research (e.g., verifying your own digital footprint or investigating phishing actors).
 
 ---
 
-## 📄 License
+## Project Structure
 
-MIT — free to use, modify, and distribute.
+```
+osint/
+├── index.html       # Main scanner UI (auth-gated)
+├── auth.html        # Login / sign-up page
+├── app.js           # Frontend logic: SSE client, 3D graph, UI rendering
+├── style.css        # Full cyberpunk dark theme (1000+ lines)
+├── netlify.toml     # Netlify deployment config
+└── README.md
+```
+
+---
+
+*Built for CS50x — Harvard University's Introduction to Computer Science.*
