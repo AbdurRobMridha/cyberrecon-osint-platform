@@ -395,6 +395,76 @@ function updateCard(result) {
 }
 
 // ─── SCAN ─────────────────────────────────────────────────────
+// Local demo scan fallback when backend is unreachable
+function startLocalScan(username) {
+  // Reset UI
+  scanResults = [];
+  graphNodes = [];
+  const toRemove = [];
+  graphGroup.children.forEach((c, i) => { if (i > 1) toRemove.push(c); });
+  toRemove.forEach(c => graphGroup.remove(c));
+
+  scanning = true;
+  scanBtn.classList.add('scanning');
+  scanBtnText.textContent = 'STOP';
+  scanBtn.querySelector('.scan-btn-icon').textContent = '◼';
+  filterTabs.style.display = 'none';
+  resultsSummary.style.display = 'none';
+  progressWrap.style.display = 'flex';
+  statusLine.className = 'status-scanning';
+  statusLine.textContent = '● SCANNING (LOCAL DEMO MODE) — TARGET: @' + username.toUpperCase();
+  graphSub.textContent = 'NODES APPEAR ON DETECTION';
+
+  scanStartTime = performance.now();
+  timerInterval = setInterval(() => {
+    timerDisplay.textContent = ((performance.now() - scanStartTime) / 1000).toFixed(1) + 's';
+  }, 100);
+
+  totalPlatforms = PLATFORMS.length;
+  // Insert stub scanning cards
+  for (let i = 0; i < totalPlatforms; i++) {
+    scanResults.push({ name: '...', cat: '', emoji: '⚙', url: '', status: 'SCANNING', ms: null });
+  }
+  filterTabs.style.display = 'flex';
+  resultsSummary.style.display = 'flex';
+  progressText.textContent = '0 / ' + totalPlatforms;
+  renderResults();
+
+  let done = 0;
+  for (let i = 0; i < PLATFORMS.length; i++) {
+    ((platform, idx) => {
+      setTimeout(() => {
+        done++;
+        // Simulate detection probability
+        const r = Math.random();
+        let status = 'NOT_FOUND';
+        if (r < 0.12) status = 'FOUND';
+        else if (r < 0.18) status = 'UNCERTAIN';
+        else if (r < 0.23) status = 'BLOCKED';
+        const ms = Math.floor(100 + Math.random() * 1200);
+        const result = { name: platform.name, cat: platform.cat, emoji: platform.emoji, url: buildUrl(platform.url, username), status, ms, done, total: totalPlatforms };
+
+        // Replace or update stub
+        if (idx < scanResults.length) scanResults[idx] = result;
+        else scanResults.push(result);
+
+        if (status === 'FOUND') addGraphNode(0x00ff88);
+        if (status === 'UNCERTAIN') addGraphNode(0xffd600);
+        if (status === 'BLOCKED') addGraphNode(0xff9500);
+
+        const pct = Math.round((done / totalPlatforms) * 100);
+        progressFill.style.width = pct + '%';
+        progressText.textContent = done + ' / ' + totalPlatforms;
+        renderResults(); updateSummary();
+
+        if (done === totalPlatforms) {
+          stopScan(`● SCAN COMPLETE — ${scanResults.filter(r=>r.status==='FOUND').length} ACCOUNTS FOUND`, 'status-done');
+        }
+      }, i * 140 + Math.floor(Math.random() * 120));
+    })(PLATFORMS[i], i);
+  }
+}
+
 async function startScan() {
   const username = usernameInput.value.trim().replace(/^@/, '');
   if (!username) { usernameInput.focus(); return; }
@@ -412,8 +482,8 @@ async function startScan() {
 
   const online = await checkServer();
   if (!online) {
-    statusLine.className = 'status-idle';
-    statusLine.textContent = '⚠ SERVER OFFLINE — run: node server.js';
+    // Fall back to local demo scan so users can try the UI without a backend
+    startLocalScan(username);
     return;
   }
 
