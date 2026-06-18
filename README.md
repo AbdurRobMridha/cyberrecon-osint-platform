@@ -1,7 +1,7 @@
 # OSINT Recon Engine — Username Intelligence System
 
-#### Video Demo: https://youtu.be/mvBZcFMDspU
-#### Preview Link: https://osint-recon-engine-backend-production.up.railway.app/
+#### [https://youtu.be/mvBZcFMDspU](https://youtu.be/mvBZcFMDspU)
+#### Preview Link: https://cyberrecon-osint-platform.onrender.com
 
 #### Description:
 
