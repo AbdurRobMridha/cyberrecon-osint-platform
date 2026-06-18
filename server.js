@@ -25,6 +25,7 @@ const allowedOrigins = [
     /^https:\/\/.*\.netlify\.app$/,
     /^https:\/\/.*\.railway\.app$/,
     /^https:\/\/.*\.up\.railway\.app$/,
+    /^https:\/\/.*\.onrender\.com$/,
     /^http:\/\/localhost/,
 ];
 app.use(cors({
