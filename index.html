@@ -14,10 +14,9 @@
     <link rel="stylesheet" href="style.css" />
     <!-- ⚙ PRODUCTION: paste your Render backend URL below -->
     <script>
-        // Leave empty for local dev (falls back to localhost:3001)
-        // Set to your Render URL for production, e.g.:
-        // window.OSINT_API_URL = 'https://osint-recon-engine-backend.onrender.com';
-        window.OSINT_API_URL = 'https://osint-recon-engine-backend-production.up.railway.app';
+        // Prefer injected backend URL; fall back to current site origin so the frontend
+        // automatically uses the same host when served from Render or similar.
+        window.OSINT_API_URL = window.OSINT_API_URL || window.location.origin;
     </script>
     <script>
         // Auth guard — redirect to login if no token
