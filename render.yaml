@@ -7,5 +7,3 @@ services:
     envVars:
       - key: JWT_SECRET
         generateValue: true
-      - key: PORT
-        value: 3001
